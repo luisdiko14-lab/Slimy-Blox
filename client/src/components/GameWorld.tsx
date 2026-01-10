@@ -71,6 +71,7 @@ export function GameWorld() {
   });
 
   const [npcs, setNpcs] = useState<Entity[]>(() => generateNPCs(10));
+  const [playerSize, setPlayerSize] = useState(PLAYER_SIZE);
   const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
@@ -115,15 +116,30 @@ export function GameWorld() {
         if (keysPressed.has("ArrowRight") || keysPressed.has("d")) x += speed;
 
         // Bounds check (unless flying maybe? nah keep bounds)
-        x = Math.max(0, Math.min(MAP_WIDTH - PLAYER_SIZE, x));
-        y = Math.max(0, Math.min(MAP_HEIGHT - PLAYER_SIZE, y));
+        x = Math.max(0, Math.min(MAP_WIDTH - playerSize, x));
+        y = Math.max(0, Math.min(MAP_HEIGHT - playerSize, y));
 
         return { ...prev, pos: { x, y } };
       });
 
-      // Simple NPC AI: Random walk
-      setNpcs((prevNpcs) =>
-        prevNpcs.map((npc) => {
+      // --- NPC Interaction: Eat NPCs ---
+      setNpcs((prevNpcs) => {
+        const remainingNpcs = prevNpcs.filter((npc) => {
+          const dx = npc.pos.x - player.pos.x;
+          const dy = npc.pos.y - player.pos.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Collision detection: if distance is less than current player size
+          if (distance < playerSize) {
+            // Eat NPC: increase size and speed
+            setPlayerSize(s => s + 5);
+            setGameSpeed(s => s + 0.02);
+            return false; // Remove NPC
+          }
+          return true;
+        });
+        
+        return remainingNpcs.map((npc) => {
           if (Math.random() > 0.95) {
             // Change direction occasionally
             const dx = (Math.random() - 0.5) * 4;
@@ -372,8 +388,8 @@ export function GameWorld() {
           style={{
             left: player.pos.x,
             top: player.pos.y,
-            width: PLAYER_SIZE,
-            height: PLAYER_SIZE,
+            width: playerSize,
+            height: playerSize,
             filter: player.effects?.includes("god") ? "drop-shadow(0 0 15px gold)" : "none",
           }}
         >
