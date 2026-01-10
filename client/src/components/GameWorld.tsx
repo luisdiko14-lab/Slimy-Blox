@@ -71,10 +71,19 @@ export function GameWorld() {
   });
 
   const [npcs, setNpcs] = useState<Entity[]>(() => generateNPCs(10));
-  const [otherPlayers, setOtherPlayers] = useState<Map<string, Entity>>(new Map());
+  const [otherPlayers, setOtherPlayers] = useState<Map<string, Entity & { secondsPlayed?: number; npcsEaten?: number }>>(new Map());
   const [playerSize, setPlayerSize] = useState(PLAYER_SIZE);
+  const [stats, setStats] = useState({ secondsPlayed: 0, npcsEaten: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const socketRef = useRef<WebSocket | null>(null);
+
+  // --- Stats Tracking ---
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStats(prev => ({ ...prev, secondsPlayed: prev.secondsPlayed + 1 }));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // --- WebSocket Setup ---
   useEffect(() => {
@@ -120,11 +129,13 @@ export function GameWorld() {
           rank: player.rank,
           size: playerSize,
           name: player.name,
-          effects: player.effects
+          effects: player.effects,
+          secondsPlayed: stats.secondsPlayed,
+          npcsEaten: stats.npcsEaten
         }
       }));
     }
-  }, [player.pos, playerSize, player.rank, player.effects]);
+  }, [player.pos, playerSize, player.rank, player.effects, stats]);
 
   const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
   const [chatOpen, setChatOpen] = useState(false);
@@ -184,6 +195,7 @@ export function GameWorld() {
             // Eat NPC: increase size and speed
             setPlayerSize(s => s + 5);
             setGameSpeed(s => s + 0.02);
+            setStats(prev => ({ ...prev, npcsEaten: prev.npcsEaten + 1 }));
             return false; // Remove NPC
           }
           return true;
@@ -563,6 +575,30 @@ export function GameWorld() {
       <div className="absolute top-4 right-4 text-right text-xs text-white/40 font-pixel">
         <p>WASD to Move</p>
         <p>/ to Chat</p>
+      </div>
+
+      {/* Leaderboard */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/80 border border-primary/30 p-3 min-w-[300px] font-pixel z-40">
+        <h3 className="text-primary text-center border-b border-primary/20 mb-2 pb-1">LEADERBOARD</h3>
+        <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
+          {[
+            { id: player.id, name: player.name, seconds: stats.secondsPlayed, eaten: stats.npcsEaten, isSelf: true },
+            ...Array.from(otherPlayers.values()).map(p => ({ id: p.id, name: p.name, seconds: p.secondsPlayed || 0, eaten: p.npcsEaten || 0, isSelf: false }))
+          ]
+          .sort((a, b) => b.eaten - a.eaten)
+          .map((p, i) => (
+            <div key={p.id} className={`flex justify-between items-center text-[10px] ${p.isSelf ? 'text-yellow-400' : 'text-white'}`}>
+              <span className="flex gap-2">
+                <span className="opacity-50">{i + 1}.</span>
+                <span className="truncate max-w-[100px]">{p.name}</span>
+              </span>
+              <span className="flex gap-4">
+                <span>⏱️ {p.seconds}s</span>
+                <span>🍖 {p.eaten}</span>
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Admin Panel Toggle */}

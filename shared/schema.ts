@@ -33,6 +33,8 @@ export interface PlayerState {
   size: number;
   name: string;
   effects: string[];
+  secondsPlayed: number;
+  npcsEaten: number;
 }
 
 export interface WsMessage {
