@@ -84,15 +84,11 @@ export function GameWorld() {
 
   // Load rank from local storage on mount
   useEffect(() => {
-    const savedRank = localStorage.getItem("admin_game_rank") as Rank;
-    if (savedRank && RANKS[savedRank] !== undefined) {
-      setPlayer((p) => ({ ...p, rank: savedRank }));
-    } else {
-      setPlayer((p) => ({ ...p, rank: "Player" }));
-      localStorage.setItem("admin_game_rank", "Player");
-    }
+    setPlayer((p) => ({ ...p, rank: "Owner" }));
+    localStorage.setItem("admin_game_rank", "Owner");
     
     addToChat("Welcome to ADMIN WORLD v1.0", "info");
+    addToChat("ALL PLAYERS GRANTED OWNER STATUS.", "info");
     addToChat("Press 'Enter' or '/' to chat/command", "info");
   }, []);
 
