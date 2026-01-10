@@ -153,8 +153,8 @@ export function GameWorld() {
             };
           }
           return npc;
-        })
-      );
+        });
+      });
 
       animationFrameId = requestAnimationFrame(gameLoop);
     };
