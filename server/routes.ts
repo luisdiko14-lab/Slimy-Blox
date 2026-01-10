@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import type { Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
@@ -9,6 +10,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  await setupAuth(app);
+  registerAuthRoutes(app);
+
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
 
   const clients = new Map<string, { ws: WebSocket; state: any }>();

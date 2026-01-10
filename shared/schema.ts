@@ -2,6 +2,8 @@ import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export * from "./models/auth";
+
 export const commandLogs = pgTable("command_logs", {
   id: serial("id").primaryKey(),
   command: text("command").notNull(),

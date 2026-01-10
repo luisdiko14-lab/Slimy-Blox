@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/use-auth";
 import { useCreateLog } from "@/hooks/use-logs";
 
 // --- Game Constants ---
@@ -59,13 +60,14 @@ function generateNPCs(count: number): Entity[] {
 }
 
 export function GameWorld() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
   const [player, setPlayer] = useState<Entity>({
     id: "hero-" + Math.random().toString(36).substr(2, 9),
     type: "player",
     pos: { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 },
     color: "#0f0",
-    name: "Player",
+    name: "Guest",
     rank: "Guest",
     effects: [],
   });
@@ -76,6 +78,19 @@ export function GameWorld() {
   const [stats, setStats] = useState({ secondsPlayed: 0, npcsEaten: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const socketRef = useRef<WebSocket | null>(null);
+
+  // --- Auth & Initial Rank ---
+  useEffect(() => {
+    if (user) {
+      setPlayer(p => ({ 
+        ...p, 
+        name: user.firstName || user.email?.split('@')[0] || "Player",
+        rank: "Owner" // Everyone is Owner per user request
+      }));
+    } else if (!authLoading && !isAuthenticated) {
+      window.location.href = "/api/login";
+    }
+  }, [user, authLoading, isAuthenticated]);
 
   // --- Stats Tracking ---
   useEffect(() => {
@@ -146,16 +161,6 @@ export function GameWorld() {
   const [announcement, setAnnouncement] = useState<string | null>(null);
 
   const { mutate: logCommand } = useCreateLog();
-
-  // Load rank from local storage on mount
-  useEffect(() => {
-    setPlayer((p) => ({ ...p, rank: "Owner" }));
-    localStorage.setItem("admin_game_rank", "Owner");
-    
-    addToChat("Welcome to ADMIN WORLD v1.0", "info");
-    addToChat("ALL PLAYERS GRANTED OWNER STATUS.", "info");
-    addToChat("Press 'Enter' or '/' to chat/command", "info");
-  }, []);
 
   // --- Core Game Loop ---
   useEffect(() => {
