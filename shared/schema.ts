@@ -17,3 +17,25 @@ export const insertCommandLogSchema = createInsertSchema(commandLogs).omit({
 
 export type CommandLog = typeof commandLogs.$inferSelect;
 export type InsertCommandLog = z.infer<typeof insertCommandLogSchema>;
+
+// --- WebSocket Types ---
+export const WS_EVENTS = {
+  PLAYER_STATE: 'player_state',
+  PLAYER_JOIN: 'player_join',
+  PLAYER_LEAVE: 'player_leave',
+  ANNOUNCEMENT: 'announcement',
+} as const;
+
+export interface PlayerState {
+  id: string;
+  pos: { x: number; y: number };
+  rank: string;
+  size: number;
+  name: string;
+  effects: string[];
+}
+
+export interface WsMessage {
+  type: keyof typeof WS_EVENTS;
+  payload: any;
+}

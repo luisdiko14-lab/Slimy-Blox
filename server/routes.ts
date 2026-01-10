@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import type { Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
@@ -8,6 +9,50 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+
+  const clients = new Map<string, { ws: WebSocket; state: any }>();
+
+  wss.on("connection", (ws) => {
+    let playerId: string | null = null;
+
+    ws.on("message", (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        if (message.type === "PLAYER_STATE") {
+          playerId = message.payload.id;
+          clients.set(playerId!, { ws, state: message.payload });
+          
+          // Broadcast to everyone else
+          const broadcastMsg = JSON.stringify({
+            type: "PLAYER_STATE",
+            payload: message.payload
+          });
+          
+          wss.clients.forEach((client) => {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+              client.send(broadcastMsg);
+            }
+          });
+        }
+      } catch (e) {}
+    });
+
+    ws.on("close", () => {
+      if (playerId) {
+        clients.delete(playerId);
+        const leaveMsg = JSON.stringify({
+          type: "PLAYER_LEAVE",
+          payload: { id: playerId }
+        });
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(leaveMsg);
+          }
+        });
+      }
+    });
+  });
   
   app.post(api.logs.create.path, async (req, res) => {
     try {

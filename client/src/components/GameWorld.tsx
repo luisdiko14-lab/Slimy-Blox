@@ -61,7 +61,7 @@ function generateNPCs(count: number): Entity[] {
 export function GameWorld() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [player, setPlayer] = useState<Entity>({
-    id: "hero",
+    id: "hero-" + Math.random().toString(36).substr(2, 9),
     type: "player",
     pos: { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 },
     color: "#0f0",
@@ -71,7 +71,61 @@ export function GameWorld() {
   });
 
   const [npcs, setNpcs] = useState<Entity[]>(() => generateNPCs(10));
+  const [otherPlayers, setOtherPlayers] = useState<Map<string, Entity>>(new Map());
   const [playerSize, setPlayerSize] = useState(PLAYER_SIZE);
+  const [isLoading, setIsLoading] = useState(true);
+  const socketRef = useRef<WebSocket | null>(null);
+
+  // --- WebSocket Setup ---
+  useEffect(() => {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    socketRef.current = ws;
+
+    ws.onopen = () => {
+      setTimeout(() => setIsLoading(false), 2000); // Artificial "Loading server..."
+    };
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === "PLAYER_STATE") {
+        setOtherPlayers(prev => {
+          const next = new Map(prev);
+          next.set(msg.payload.id, {
+            ...msg.payload,
+            type: 'player'
+          });
+          return next;
+        });
+      } else if (msg.type === "PLAYER_LEAVE") {
+        setOtherPlayers(prev => {
+          const next = new Map(prev);
+          next.delete(msg.payload.id);
+          return next;
+        });
+      }
+    };
+
+    return () => ws.close();
+  }, []);
+
+  // Broadcast state
+  useEffect(() => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({
+        type: 'PLAYER_STATE',
+        payload: {
+          id: player.id,
+          pos: player.pos,
+          rank: player.rank,
+          size: playerSize,
+          name: player.name,
+          effects: player.effects
+        }
+      }));
+    }
+  }, [player.pos, playerSize, player.rank, player.effects]);
+
   const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
@@ -341,6 +395,27 @@ export function GameWorld() {
   // --- Rendering ---
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden font-terminal">
+      {/* --- Loading Server --- */}
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div 
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[100] bg-black flex flex-col items-center justify-center font-pixel"
+          >
+            <div className="text-primary text-4xl mb-4 animate-pulse">LOADING SERVER...</div>
+            <div className="w-64 h-2 bg-white/10 border border-primary/30 relative overflow-hidden">
+               <motion.div 
+                 initial={{ x: "-100%" }}
+                 animate={{ x: "100%" }}
+                 transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                 className="absolute inset-0 bg-primary/50"
+               />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* --- Scanlines Overlay --- */}
       <div className="absolute inset-0 z-50 pointer-events-none scanline opacity-20"></div>
 
@@ -383,6 +458,46 @@ export function GameWorld() {
               className="w-full h-full bg-white/20 border-2 border-white/40 rounded-sm"
               style={{ backgroundColor: npc.color }}
             />
+          </div>
+        ))}
+
+        {/* Other Players */}
+        {Array.from(otherPlayers.values()).map((other) => (
+          <div
+            key={other.id}
+            className="absolute flex flex-col items-center justify-center transition-all duration-75"
+            style={{
+              left: other.pos.x,
+              top: other.pos.y,
+              width: other.size || PLAYER_SIZE,
+              height: other.size || PLAYER_SIZE,
+              filter: other.effects?.includes("god") ? "drop-shadow(0 0 15px gold)" : "none",
+            }}
+          >
+             <div className="flex flex-col items-center -mt-8 mb-2">
+                <span 
+                  className="text-[10px] px-1 bg-black/50 rounded font-pixel text-glow uppercase"
+                  style={{ color: RANK_COLORS[other.rank || "Guest"] }}
+                >
+                  [{other.rank}]
+                </span>
+                <span className="text-white text-xs font-bold text-shadow">{other.name}</span>
+              </div>
+              <div 
+                className={`w-full h-full border-2 ${
+                  other.effects?.includes("fly") ? "translate-y-[-10px] shadow-2xl" : ""
+                }`}
+                style={{ 
+                  backgroundColor: other.color || '#555',
+                  borderColor: RANK_COLORS[other.rank || "Guest"],
+                  boxShadow: `0 0 10px ${RANK_COLORS[other.rank || "Guest"]}`
+                }}
+              >
+                 <div className="flex gap-2 justify-center mt-2">
+                    <div className="w-2 h-2 bg-black"></div>
+                    <div className="w-2 h-2 bg-black"></div>
+                 </div>
+              </div>
           </div>
         ))}
 
