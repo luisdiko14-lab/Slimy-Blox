@@ -281,6 +281,14 @@ export function GameWorld() {
         addToChat(`Speed set to ${val}`, "info");
         break;
 
+      case "size":
+        if (!checkPermission("Admin")) return addToChat("Permission Denied.", "error");
+        const sVal = parseInt(args[0]);
+        if (isNaN(sVal)) return addToChat("Usage: /size <number>", "error");
+        setPlayerSize(sVal);
+        addToChat(`Size set to ${sVal}`, "info");
+        break;
+
       case "god":
         if (!checkPermission("SuperAdmin")) return addToChat("Permission Denied.", "error");
         setPlayer((p) => ({
