@@ -444,16 +444,17 @@ export function GameWorld() {
         break;
 
       case "kick":
+      case "kill":
         if (!checkPermission("Owner")) return addToChat("Permission Denied.", "error");
         const target = args[0];
-        if (!target) return addToChat("Usage: /kick <name> or /kick @everyone", "error");
+        if (!target) return addToChat(`Usage: /${cmd} <name> or /${cmd} @everyone`, "error");
 
         if (socketRef.current?.readyState === WebSocket.OPEN) {
           socketRef.current.send(JSON.stringify({
             type: 'KICK_PLAYER',
             payload: { target }
           }));
-          addToChat(`Sent kick request for: ${target}`, "info");
+          addToChat(`Sent ${cmd} request for: ${target}`, "info");
         }
         break;
 
