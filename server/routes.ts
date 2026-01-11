@@ -38,14 +38,26 @@ export async function registerRoutes(
               client.send(broadcastMsg);
             }
           });
-        } else if (message.type === "KICK_ALL") {
-          // Broadcast kick to everyone including sender
+        } else if (message.type === "KICK_PLAYER") {
+          const target = message.payload.target;
           const kickMsg = JSON.stringify({ type: "KICK_ALL" });
-          wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-              client.send(kickMsg);
-            }
-          });
+
+          if (target === "@everyone") {
+            wss.clients.forEach((client) => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(kickMsg);
+              }
+            });
+          } else {
+            // Find client by name
+            clients.forEach((c, id) => {
+              if (c.state.name === target) {
+                if (c.ws.readyState === WebSocket.OPEN) {
+                  c.ws.send(kickMsg);
+                }
+              }
+            });
+          }
         }
       } catch (e) {}
     });

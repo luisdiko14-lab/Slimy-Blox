@@ -443,12 +443,15 @@ export function GameWorld() {
 
       case "kick":
         if (!checkPermission("Owner")) return addToChat("Permission Denied.", "error");
-        // We broadcast to the server, which then broadcasts KICK_ALL to every connected client
+        const target = args[0];
+        if (!target) return addToChat("Usage: /kick <name> or /kick @everyone", "error");
+
         if (socketRef.current?.readyState === WebSocket.OPEN) {
           socketRef.current.send(JSON.stringify({
-            type: 'KICK_ALL'
+            type: 'KICK_PLAYER',
+            payload: { target }
           }));
-          addToChat("Broadcasting KICK_ALL to all players...", "info");
+          addToChat(`Sent kick request for: ${target}`, "info");
         }
         break;
 
