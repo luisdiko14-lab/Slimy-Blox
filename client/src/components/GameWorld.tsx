@@ -264,12 +264,17 @@ export function GameWorld() {
     };
   }, [chatOpen, chatInput, player]); // dependencies critical for closure state
 
-  const handleTouchStart = (key: string) => {
+  const handleTouchStart = (e: React.PointerEvent<HTMLButtonElement> | React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>, key: string) => {
+    if ('button' in e && e.button !== 0) return;
     if (chatOpen) return;
-    setKeysPressed((prev) => new Set(prev).add(key));
+    setKeysPressed((prev) => {
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
   };
 
-  const handleTouchEnd = (key: string) => {
+  const handleTouchEnd = (e: React.PointerEvent<HTMLButtonElement> | React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>, key: string) => {
     setKeysPressed((prev) => {
       const next = new Set(prev);
       next.delete(key);
@@ -596,41 +601,49 @@ export function GameWorld() {
       </div>
 
       {/* Mobile Controls - Always Visible */}
-      <div className="absolute bottom-8 left-8 flex flex-col items-center gap-2 z-[60] select-none">
+      <div className="absolute bottom-8 left-8 flex flex-col items-center gap-2 z-[60] select-none touch-none">
         <div className="flex gap-2">
           <button 
-            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all"
-            onPointerDown={() => handleTouchStart("w")}
-            onPointerUp={() => handleTouchEnd("w")}
-            onPointerLeave={() => handleTouchEnd("w")}
+            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all touch-none pointer-events-auto"
+            onPointerDown={(e) => handleTouchStart(e, "w")}
+            onPointerUp={(e) => handleTouchEnd(e, "w")}
+            onPointerCancel={(e) => handleTouchEnd(e, "w")}
+            onPointerLeave={(e) => handleTouchEnd(e, "w")}
+            onContextMenu={(e) => e.preventDefault()}
           >
-            <span className="text-primary text-2xl font-bold">W</span>
+            <span className="text-primary text-2xl font-bold pointer-events-none">W</span>
           </button>
         </div>
         <div className="flex gap-2">
           <button 
-            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all"
-            onPointerDown={() => handleTouchStart("a")}
-            onPointerUp={() => handleTouchEnd("a")}
-            onPointerLeave={() => handleTouchEnd("a")}
+            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all touch-none pointer-events-auto"
+            onPointerDown={(e) => handleTouchStart(e, "a")}
+            onPointerUp={(e) => handleTouchEnd(e, "a")}
+            onPointerCancel={(e) => handleTouchEnd(e, "a")}
+            onPointerLeave={(e) => handleTouchEnd(e, "a")}
+            onContextMenu={(e) => e.preventDefault()}
           >
-            <span className="text-primary text-2xl font-bold">A</span>
+            <span className="text-primary text-2xl font-bold pointer-events-none">A</span>
           </button>
           <button 
-            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all"
-            onPointerDown={() => handleTouchStart("s")}
-            onPointerUp={() => handleTouchEnd("s")}
-            onPointerLeave={() => handleTouchEnd("s")}
+            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all touch-none pointer-events-auto"
+            onPointerDown={(e) => handleTouchStart(e, "s")}
+            onPointerUp={(e) => handleTouchEnd(e, "s")}
+            onPointerCancel={(e) => handleTouchEnd(e, "s")}
+            onPointerLeave={(e) => handleTouchEnd(e, "s")}
+            onContextMenu={(e) => e.preventDefault()}
           >
-            <span className="text-primary text-2xl font-bold">S</span>
+            <span className="text-primary text-2xl font-bold pointer-events-none">S</span>
           </button>
           <button 
-            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all"
-            onPointerDown={() => handleTouchStart("d")}
-            onPointerUp={() => handleTouchEnd("d")}
-            onPointerLeave={() => handleTouchEnd("d")}
+            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all touch-none pointer-events-auto"
+            onPointerDown={(e) => handleTouchStart(e, "d")}
+            onPointerUp={(e) => handleTouchEnd(e, "d")}
+            onPointerCancel={(e) => handleTouchEnd(e, "d")}
+            onPointerLeave={(e) => handleTouchEnd(e, "d")}
+            onContextMenu={(e) => e.preventDefault()}
           >
-            <span className="text-primary text-2xl font-bold">D</span>
+            <span className="text-primary text-2xl font-bold pointer-events-none">D</span>
           </button>
         </div>
       </div>
