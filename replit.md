@@ -1,70 +1,50 @@
 # Replit.md
 
 ## Overview
+**ADMIN WORLD** is a retro-themed, multiplayer arcade game where every player is automatically granted **Owner** status. Built with a terminal-style cyberpunk aesthetic, it features real-time interaction, admin commands, and a Nintendo-inspired "boot sequence" loading screen.
 
-This is a retro-themed multiplayer arcade game built as a full-stack TypeScript application. The project features a 2D game world with player movement, rank-based permissions, and real-time multiplayer via WebSockets. The game has a cyberpunk/terminal aesthetic with custom fonts and neon color schemes.
+## Project Vision
+- **Multiplayer Admin Fun**: A world where everyone has the power to /kick, /kill, and /announce.
+- **Retro Aesthetic**: CRT scanlines, pixel fonts, and glitch effects for a nostalgic 80s/90s terminal feel.
+- **Low Friction**: Instant guest access or Replit Auth for permanent identities.
 
 ## User Preferences
+- **Communication**: Simple, everyday language.
+- **Style**: Cyberpunk/Terminal aesthetic with high contrast (Neon on Black).
+- **Features**: Mobile-friendly D-pad controls visible on all devices.
 
-Preferred communication style: Simple, everyday language.
+## Technical Architecture
 
-## System Architecture
+### Frontend (client/src/)
+- **Framework**: React 18 with TypeScript.
+- **Game Engine**: Custom `requestAnimationFrame` loop in `GameWorld.tsx`.
+- **UI & Components**: 
+  - `shadcn/ui` primitives for interface elements.
+  - `framer-motion` for smooth UI transitions and glitch effects.
+  - `Tailwind CSS` for utility-based styling.
+- **State Management**:
+  - `React Query` for backend logs.
+  - `useState/useRef` for high-frequency game state (positioning, entities).
 
-### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Routing**: Wouter (lightweight React router)
-- **State Management**: React Query for server state, React useState/useRef for local game state
-- **Styling**: Tailwind CSS with custom CSS variables for theming
-- **UI Components**: shadcn/ui component library (Radix UI primitives)
-- **Animations**: Framer Motion for smooth UI transitions
-- **Build Tool**: Vite with HMR support
+### Backend (server/)
+- **Runtime**: Node.js with Express and TypeScript.
+- **Real-time**: WebSocket (`ws`) server for player synchronization, chat broadcasting, and command execution.
+- **Persistence**: 
+  - PostgreSQL via Drizzle ORM.
+  - Command logs stored for auditing and leaderboard purposes.
 
-The frontend is located in `client/src/` with the main entry point at `client/src/main.tsx`. The game world component at `client/src/components/GameWorld.tsx` uses requestAnimationFrame for the game loop.
+### Key Game Systems
+- **Command System**: Supports `/kick`, `/kill`, `/tp`, `/speed`, `/size`, `/fly`, `/god`, and `/announce`.
+- **Targeting**: Commands like `/kick` support specific player names or `@everyone`.
+- **Redirection**: Terminated/Kicked sessions redirect to custom static pages (`kicked.html`, `killed.html`) in the `public/` directory.
 
-### Backend Architecture
-- **Runtime**: Node.js with Express
-- **Language**: TypeScript (compiled with tsx for development, esbuild for production)
-- **API Design**: REST endpoints defined in `shared/routes.ts` with Zod validation
-- **Real-time**: WebSocket server (ws library) for multiplayer synchronization
+## Recent Architectural Changes
+- **2026-01-11**: Implemented multi-target kick/kill logic with reason-based redirection.
+- **2026-01-11**: Upgraded loading screen to `ADMIN_OS` boot sequence with terminal logs.
+- **2026-01-11**: Enabled global chat broadcasting via WebSocket.
+- **2026-01-11**: Integrated Replit Auth with automatic Owner rank assignment.
 
-The server is located in `server/` with the entry point at `server/index.ts`. Routes are registered in `server/routes.ts`.
-
-### Data Storage
-- **Database**: PostgreSQL via Drizzle ORM
-- **Schema Location**: `shared/schema.ts` (shared between client and server)
-- **Migrations**: Drizzle Kit with output to `./migrations`
-- **Session Storage**: connect-pg-simple for PostgreSQL-backed sessions
-
-The database stores command logs with timestamps, tracking user commands and their rank levels.
-
-### Shared Code Pattern
-The `shared/` directory contains code used by both frontend and backend:
-- `schema.ts`: Database table definitions and Zod schemas
-- `routes.ts`: API route definitions with type-safe request/response schemas
-
-### Build Configuration
-- Development: `npm run dev` runs tsx for hot-reloading
-- Production: `npm run build` uses Vite for client, esbuild for server bundling
-- Database: `npm run db:push` applies schema changes via Drizzle Kit
-
-## External Dependencies
-
-### Database
-- **PostgreSQL**: Primary database accessed via `DATABASE_URL` environment variable
-- **Drizzle ORM**: Type-safe database queries and schema management
-
-### Real-time Communication
-- **WebSocket (ws)**: Native WebSocket server for multiplayer game state synchronization
-- Players broadcast their position, rank, and effects to other connected clients
-
-### UI Framework Dependencies
-- **Radix UI**: Headless UI primitives for accessible components
-- **shadcn/ui**: Pre-styled component library built on Radix
-- **Tailwind CSS**: Utility-first CSS framework with custom theme
-
-### Key NPM Packages
-- `@tanstack/react-query`: Data fetching and caching
-- `framer-motion`: Animation library
-- `zod`: Runtime type validation
-- `drizzle-zod`: Automatic Zod schema generation from Drizzle tables
-- `wouter`: Lightweight React router
+## Navigation & Development
+- **Dev Command**: `npm run dev` (Starts Vite and Express).
+- **Schema**: Shared types in `shared/schema.ts`.
+- **Public Assets**: Static redirect pages in `./public/`.
