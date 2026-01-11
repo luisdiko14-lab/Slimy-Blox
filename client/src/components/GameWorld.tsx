@@ -77,20 +77,52 @@ export function GameWorld() {
   const [playerSize, setPlayerSize] = useState(PLAYER_SIZE);
   const [stats, setStats] = useState({ secondsPlayed: 0, npcsEaten: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingStatus, setLoadingStatus] = useState("INITIALIZING...");
   const socketRef = useRef<WebSocket | null>(null);
 
   // --- Auth & Initial Rank ---
   useEffect(() => {
+    const isGuest = localStorage.getItem("game_guest_mode") === "true";
+    
     if (user) {
       setPlayer(p => ({ 
         ...p, 
         name: user.firstName || user.email?.split('@')[0] || "Player",
-        rank: "Owner" // Everyone is Owner per user request
+        rank: "Owner"
+      }));
+    } else if (isGuest) {
+      setPlayer(p => ({
+        ...p,
+        name: "Guest_" + Math.random().toString(36).substr(2, 4),
+        rank: "Owner" // Still Owner per request
       }));
     } else if (!authLoading && !isAuthenticated) {
-      window.location.href = "/api/login";
+      // If neither, we should technically be on landing page, but safeguard
+      window.location.href = "/";
     }
   }, [user, authLoading, isAuthenticated]);
+
+  // --- Loading Simulation ---
+  useEffect(() => {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 2;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        setTimeout(() => setIsLoading(false), 500);
+      }
+      setLoadingProgress(Math.floor(progress));
+      
+      if (progress < 30) setLoadingStatus("CONNECTING TO REPLIT.COM/SERVERS...");
+      else if (progress < 60) setLoadingStatus("ESTABLISHING SECURE TUNNEL...");
+      else if (progress < 90) setLoadingStatus("SYNCHRONIZING WORLD DATA...");
+      else setLoadingStatus("READY TO DROP.");
+    }, 150); // Slower loading
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // --- Stats Tracking ---
   useEffect(() => {
@@ -438,15 +470,15 @@ export function GameWorld() {
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-[100] bg-black flex flex-col items-center justify-center font-pixel"
           >
-            <div className="text-primary text-4xl mb-4 animate-pulse">LOADING SERVER...</div>
-            <div className="w-64 h-2 bg-white/10 border border-primary/30 relative overflow-hidden">
+            <div className="text-primary text-4xl mb-4 animate-pulse">{loadingStatus}</div>
+            <div className="w-64 h-4 bg-white/10 border border-primary/30 relative overflow-hidden mb-2">
                <motion.div 
-                 initial={{ x: "-100%" }}
-                 animate={{ x: "100%" }}
-                 transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                 className="absolute inset-0 bg-primary/50"
+                 initial={{ width: 0 }}
+                 animate={{ width: `${loadingProgress}%` }}
+                 className="absolute inset-y-0 left-0 bg-primary/50"
                />
             </div>
+            <div className="text-primary/70 text-sm">{loadingProgress}%</div>
           </motion.div>
         )}
       </AnimatePresence>
