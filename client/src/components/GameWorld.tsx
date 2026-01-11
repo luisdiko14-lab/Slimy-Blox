@@ -103,23 +103,38 @@ export function GameWorld() {
     }
   }, [user, authLoading, isAuthenticated]);
 
+  const [loadingLogs, setLoadingLogs] = useState<string[]>([]);
+
   // --- Loading Simulation ---
   useEffect(() => {
     let progress = 0;
+    const logs = [
+      "BOOTING ADMIN_OS v1.0.4...",
+      "CHECKING REPLIT CLOUD INSTANCE...",
+      "ACQUIRING NODE_5000 TUNNEL...",
+      "MOUNTING SHARED_SCHEMA.TS...",
+      "VALIDATING OWNER CREDENTIALS...",
+      "BYPASSING SECURITY PROTOCOLS...",
+      "ESTABLISHING WEBSOCKET HANDSHAKE...",
+      "SYNCHRONIZING MULTIPLAYER STATE...",
+      "BUFFERING ASSETS...",
+      "LOADING RETRO SHADERS...",
+      "READY TO ADMINISTER."
+    ];
+
     const interval = setInterval(() => {
-      progress += Math.random() * 2;
+      progress += Math.random() * 4;
       if (progress >= 100) {
         progress = 100;
         clearInterval(interval);
-        setTimeout(() => setIsLoading(false), 500);
+        setTimeout(() => setIsLoading(false), 800);
       }
       setLoadingProgress(Math.floor(progress));
       
-      if (progress < 30) setLoadingStatus("CONNECTING TO REPLIT.COM/SERVERS...");
-      else if (progress < 60) setLoadingStatus("ESTABLISHING SECURE TUNNEL...");
-      else if (progress < 90) setLoadingStatus("SYNCHRONIZING WORLD DATA...");
-      else setLoadingStatus("READY TO DROP.");
-    }, 150); // Slower loading
+      const logIdx = Math.floor((progress / 100) * logs.length);
+      setLoadingStatus(logs[Math.min(logIdx, logs.length - 1)]);
+      setLoadingLogs(logs.slice(0, logIdx + 1));
+    }, 120);
     
     return () => clearInterval(interval);
   }, []);
@@ -137,10 +152,6 @@ export function GameWorld() {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
     socketRef.current = ws;
-
-    ws.onopen = () => {
-      setTimeout(() => setIsLoading(false), 2000); // Artificial "Loading server..."
-    };
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
@@ -503,17 +514,55 @@ export function GameWorld() {
           <motion.div 
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[100] bg-black flex flex-col items-center justify-center font-pixel"
+            className="absolute inset-0 z-[100] bg-black flex flex-col items-center justify-center font-terminal p-4"
           >
-            <div className="text-primary text-4xl mb-4 animate-pulse">{loadingStatus}</div>
-            <div className="w-64 h-4 bg-white/10 border border-primary/30 relative overflow-hidden mb-2">
-               <motion.div 
-                 initial={{ width: 0 }}
-                 animate={{ width: `${loadingProgress}%` }}
-                 className="absolute inset-y-0 left-0 bg-primary/50"
-               />
+            <div className="absolute top-8 left-8 text-primary/20 text-xs tracking-[0.2em]">
+              ADMIN_OS v1.0.4<br/>
+              SYSTEM_BOOT_SEQUENCE
             </div>
-            <div className="text-primary/70 text-sm">{loadingProgress}%</div>
+
+            <div className="w-full max-w-lg retro-container border-2 border-primary/30 p-8 bg-black/80 backdrop-blur-sm relative overflow-hidden">
+              {/* Glitch lines */}
+              <div className="absolute inset-0 pointer-events-none opacity-10">
+                <div className="absolute h-px w-full bg-primary top-1/4 animate-scanline"></div>
+                <div className="absolute h-px w-full bg-primary top-3/4 animate-scanline-delayed"></div>
+              </div>
+
+              <div className="text-primary text-xl mb-6 font-pixel tracking-widest flex items-center gap-2">
+                <span className="w-2 h-2 bg-primary animate-pulse"></span>
+                {loadingStatus}
+              </div>
+
+              <div className="space-y-1 mb-8 font-terminal text-[10px] text-primary/40 h-24 overflow-hidden uppercase">
+                {loadingLogs.map((log, i) => (
+                  <motion.div 
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                  >
+                    {">"} {log}
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="relative">
+                <div className="w-full h-2 bg-primary/10 border border-primary/20 relative overflow-hidden">
+                  <motion.div 
+                    className="absolute inset-y-0 left-0 bg-primary shadow-[0_0_15px_rgba(0,255,0,0.5)]"
+                    animate={{ width: `${loadingProgress}%` }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.1 }}
+                  />
+                </div>
+                <div className="flex justify-between mt-2 text-[10px] text-primary/60 font-terminal tracking-tighter">
+                  <span>SYSTEM_READY: {loadingProgress}%</span>
+                  <span>0x000F4240</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 text-primary/30 text-[10px] tracking-widest animate-pulse">
+              PRESS ANY KEY TO SKIP
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
