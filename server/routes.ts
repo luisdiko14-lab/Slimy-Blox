@@ -49,9 +49,10 @@ export async function registerRoutes(
               }
             });
           } else {
-            // Find client by name
-            clients.forEach((c, id) => {
-              if (c.state.name === target) {
+            // Find client by name (case-insensitive for better UX)
+            const targetLower = target.toLowerCase();
+            clients.forEach((c) => {
+              if (c.state.name.toLowerCase() === targetLower) {
                 if (c.ws.readyState === WebSocket.OPEN) {
                   c.ws.send(kickMsg);
                 }

@@ -379,14 +379,6 @@ export function GameWorld() {
         addToChat(`Spawned ${count} NPCs.`, "info");
         break;
 
-      case "kick":
-        if (!checkPermission("Moderator")) return addToChat("Permission Denied.", "error");
-        if (npcs.length > 0) {
-          setNpcs((prev) => prev.slice(0, -1)); // Just remove last for simplicity or by ID if implemented
-          addToChat("Kicked an NPC.", "info");
-        }
-        break;
-
       case "fly":
         if (!checkPermission("Admin")) return addToChat("Permission Denied.", "error");
         setPlayer((p) => ({
