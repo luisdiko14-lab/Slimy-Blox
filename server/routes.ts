@@ -50,7 +50,8 @@ export async function registerRoutes(
           });
         } else if (message.type === "KICK_PLAYER") {
           const target = message.payload.target;
-          const kickMsg = JSON.stringify({ type: "KICK_ALL" });
+          const reason = message.payload.reason || 'kick';
+          const kickMsg = JSON.stringify({ type: "KICK_ALL", payload: { reason } });
 
           if (target === "@everyone") {
             wss.clients.forEach((client) => {

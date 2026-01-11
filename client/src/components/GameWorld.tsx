@@ -162,8 +162,9 @@ export function GameWorld() {
       } else if (msg.type === "CHAT_MESSAGE") {
         addToChat(`${msg.payload.name}: ${msg.payload.text}`, "chat");
       } else if (msg.type === "KICK_ALL") {
-        console.log("Player was kicked, redirecting to kicked.html");
-        window.location.href = "/kicked.html";
+        const reason = msg.payload?.reason || 'kick';
+        console.log(`Player was kicked/killed, reason: ${reason}, redirecting...`);
+        window.location.href = reason === 'kill' ? "/killed.html" : "/kicked.html";
       }
     };
 
@@ -444,17 +445,30 @@ export function GameWorld() {
         break;
 
       case "kick":
-      case "kill":
         if (!checkPermission("Owner")) return addToChat("Permission Denied.", "error");
-        const target = args[0];
-        if (!target) return addToChat(`Usage: /${cmd} <name> or /${cmd} @everyone`, "error");
+        const kickTarget = args[0];
+        if (!kickTarget) return addToChat(`Usage: /kick <name> or /kick @everyone`, "error");
 
         if (socketRef.current?.readyState === WebSocket.OPEN) {
           socketRef.current.send(JSON.stringify({
             type: 'KICK_PLAYER',
-            payload: { target }
+            payload: { target: kickTarget, reason: 'kick' }
           }));
-          addToChat(`Sent ${cmd} request for: ${target}`, "info");
+          addToChat(`Sent kick request for: ${kickTarget}`, "info");
+        }
+        break;
+
+      case "kill":
+        if (!checkPermission("Owner")) return addToChat("Permission Denied.", "error");
+        const killTarget = args[0];
+        if (!killTarget) return addToChat(`Usage: /kill <name> or /kill @everyone`, "error");
+
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({
+            type: 'KICK_PLAYER',
+            payload: { target: killTarget, reason: 'kill' }
+          }));
+          addToChat(`Sent kill request for: ${killTarget}`, "info");
         }
         break;
 
