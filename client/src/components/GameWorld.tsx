@@ -159,6 +159,9 @@ export function GameWorld() {
           next.delete(msg.payload.id);
           return next;
         });
+      } else if (msg.type === "KICK_ALL") {
+        setIsKicked(true);
+        if (socketRef.current) socketRef.current.close();
       }
     };
 
@@ -191,6 +194,7 @@ export function GameWorld() {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [gameSpeed, setGameSpeed] = useState(MOVEMENT_SPEED_BASE);
   const [announcement, setAnnouncement] = useState<string | null>(null);
+  const [isKicked, setIsKicked] = useState(false);
 
   const { mutate: logCommand } = useCreateLog();
 
@@ -437,6 +441,15 @@ export function GameWorld() {
         addToChat(`Teleported to ${x}, ${y}`, "info");
         break;
 
+      case "kick":
+        if (!checkPermission("Owner")) return addToChat("Permission Denied.", "error");
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({
+            type: 'KICK_ALL'
+          }));
+        }
+        break;
+
       case "rank":
         if (!checkPermission("Owner")) return addToChat("Permission Denied.", "error");
         // For simplicity, just rank self if no user spec, or rank self anyway since no other real players
@@ -485,6 +498,40 @@ export function GameWorld() {
 
       {/* --- Scanlines Overlay --- */}
       <div className="absolute inset-0 z-50 pointer-events-none scanline opacity-20"></div>
+
+      {/* --- Kick Popup --- */}
+      <AnimatePresence>
+        {isKicked && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute inset-0 z-[110] bg-black/90 flex flex-col items-center justify-center font-pixel p-6"
+          >
+            <div className="retro-container border-2 border-red-500 p-8 max-w-md w-full text-center">
+              <h2 className="text-red-500 text-2xl mb-6 animate-pulse">CONNECTION LOST</h2>
+              <p className="text-white/70 mb-8 uppercase text-sm leading-relaxed">
+                You have lost connection to the server.
+              </p>
+              
+              <div className="flex flex-col gap-4">
+                <Button 
+                  onClick={() => window.location.reload()}
+                  className="w-full h-12 bg-red-500 text-white hover:bg-red-600 rounded-none border-none"
+                >
+                  REJOIN
+                </Button>
+                <Button 
+                  onClick={() => window.location.href = "/"}
+                  variant="outline"
+                  className="w-full h-12 border-white/20 text-white/50 hover:bg-white/10 rounded-none"
+                >
+                  EXIT
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* --- Game World Container --- */}
       {/* We translate the world so player is always center (Camera follow) */}
