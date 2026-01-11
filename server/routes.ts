@@ -38,6 +38,16 @@ export async function registerRoutes(
               client.send(broadcastMsg);
             }
           });
+        } else if (message.type === "CHAT_MESSAGE") {
+          const chatMsg = JSON.stringify({
+            type: "CHAT_MESSAGE",
+            payload: message.payload
+          });
+          wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(chatMsg);
+            }
+          });
         } else if (message.type === "KICK_PLAYER") {
           const target = message.payload.target;
           const kickMsg = JSON.stringify({ type: "KICK_ALL" });

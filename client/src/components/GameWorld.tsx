@@ -159,6 +159,8 @@ export function GameWorld() {
           next.delete(msg.payload.id);
           return next;
         });
+      } else if (msg.type === "CHAT_MESSAGE") {
+        addToChat(`${msg.payload.name}: ${msg.payload.text}`, "chat");
       } else if (msg.type === "KICK_ALL") {
         console.log("Player was kicked, redirecting to kicked.html");
         window.location.href = "/kicked.html";
@@ -346,7 +348,15 @@ export function GameWorld() {
 
       executeCommand(cmd, args);
     } else {
-      addToChat(`${player.name}: ${rawCommand}`, "chat");
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({
+          type: 'CHAT_MESSAGE',
+          payload: {
+            name: player.name,
+            text: rawCommand
+          }
+        }));
+      }
     }
   };
 
