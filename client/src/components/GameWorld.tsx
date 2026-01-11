@@ -264,6 +264,19 @@ export function GameWorld() {
     };
   }, [chatOpen, chatInput, player]); // dependencies critical for closure state
 
+  const handleTouchStart = (key: string) => {
+    if (chatOpen) return;
+    setKeysPressed((prev) => new Set(prev).add(key));
+  };
+
+  const handleTouchEnd = (key: string) => {
+    setKeysPressed((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  };
+
   // --- Command Logic ---
   const addToChat = (msg: string, type: "info" | "error" | "chat" = "info") => {
     setChatLog((prev) => [...prev.slice(-19), { msg, type }]);
@@ -577,9 +590,63 @@ export function GameWorld() {
       </div>
 
       {/* Controls Hint */}
-      <div className="absolute top-4 right-4 text-right text-xs text-white/40 font-pixel">
+      <div className="absolute top-4 right-4 text-right text-xs text-white/40 font-pixel hidden md:block">
         <p>WASD to Move</p>
         <p>/ to Chat</p>
+      </div>
+
+      {/* Mobile Controls - Always Visible */}
+      <div className="absolute bottom-8 left-8 flex flex-col items-center gap-2 z-[60] select-none">
+        <div className="flex gap-2">
+          <button 
+            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all"
+            onPointerDown={() => handleTouchStart("w")}
+            onPointerUp={() => handleTouchEnd("w")}
+            onPointerLeave={() => handleTouchEnd("w")}
+          >
+            <span className="text-primary text-2xl font-bold">W</span>
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button 
+            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all"
+            onPointerDown={() => handleTouchStart("a")}
+            onPointerUp={() => handleTouchEnd("a")}
+            onPointerLeave={() => handleTouchEnd("a")}
+          >
+            <span className="text-primary text-2xl font-bold">A</span>
+          </button>
+          <button 
+            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all"
+            onPointerDown={() => handleTouchStart("s")}
+            onPointerUp={() => handleTouchEnd("s")}
+            onPointerLeave={() => handleTouchEnd("s")}
+          >
+            <span className="text-primary text-2xl font-bold">S</span>
+          </button>
+          <button 
+            className="w-16 h-16 bg-primary/20 border-2 border-primary/40 rounded-lg flex items-center justify-center active:bg-primary/40 active:scale-95 transition-all"
+            onPointerDown={() => handleTouchStart("d")}
+            onPointerUp={() => handleTouchEnd("d")}
+            onPointerLeave={() => handleTouchEnd("d")}
+          >
+            <span className="text-primary text-2xl font-bold">D</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="absolute bottom-8 right-8 flex gap-4 z-[60] select-none">
+        <button 
+          className="w-20 h-20 bg-cyan-500/20 border-2 border-cyan-500/40 rounded-full flex items-center justify-center active:bg-cyan-500/40 active:scale-90 transition-all font-pixel text-cyan-400 text-xs text-center p-2"
+          onClick={() => {
+            setChatOpen(true);
+            // On mobile we might need a slight delay to focus the input if we had a dedicated input element,
+            // but for now this toggles the existing chat logic.
+          }}
+        >
+          CHAT [ / ]
+        </button>
       </div>
 
       {/* Leaderboard */}
