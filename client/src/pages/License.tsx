@@ -65,38 +65,38 @@ export default function License() {
                 <section>
                   <h2 className="text-[#00ffff] font-bold mb-2">[ARTICLE_01] GRANT OF AUTHORITY</h2>
                   <p className="pl-4 border-l-2 border-[#00ff00]/30">
-                    >>> By accessing ADMIN WORLD, you are hereby granted immediate **OWNER** status.
+                    {" >>> "} By accessing ADMIN WORLD, you are hereby granted immediate **OWNER** status.
                     <br />
-                    >>> You are authorized to use any and all administrative commands including but not limited to: /kick, /kill, /announce, and /tp.
+                    {" >>> "} You are authorized to use any and all administrative commands including but not limited to: /kick, /kill, /announce, and /tp.
                   </p>
                 </section>
 
                 <section>
                   <h2 className="text-[#00ffff] font-bold mb-2">[ARTICLE_02] USER CONDUCT</h2>
                   <p className="pl-4 border-l-2 border-[#00ff00]/30">
-                    >>> Abuse of power is not only allowed but encouraged. 
+                    {" >>> "} Abuse of power is not only allowed but encouraged. 
                     <br />
-                    >>> If you are kicked, you may rejoin. If you are killed, you may respawn.
+                    {" >>> "} If you are kicked, you may rejoin. If you are killed, you may respawn.
                     <br />
-                    >>> The cycle of digital chaos must continue.
+                    {" >>> "} The cycle of digital chaos must continue.
                   </p>
                 </section>
 
                 <section>
                   <h2 className="text-[#00ffff] font-bold mb-2">[ARTICLE_03] PROPRIETARY RIGHTS</h2>
                   <p className="pl-4 border-l-2 border-[#00ff00]/30">
-                    >>> All digital souls within this environment are property of the ADMIN_OS.
+                    {" >>> "} All digital souls within this environment are property of the ADMIN_OS.
                     <br />
-                    >>> No refunds for lost digital existence.
+                    {" >>> "} No refunds for lost digital existence.
                   </p>
                 </section>
 
                 <section>
                   <h2 className="text-[#00ffff] font-bold mb-2">[ARTICLE_04] DATA AUDIT</h2>
                   <p className="pl-4 border-l-2 border-[#00ff00]/30">
-                    >>> Every keystroke is logged. Every command is archived. 
+                    {" >>> "} Every keystroke is logged. Every command is archived. 
                     <br />
-                    >>> The leaderboard is eternal.
+                    {" >>> "} The leaderboard is eternal.
                   </p>
                 </section>
 
@@ -111,7 +111,7 @@ export default function License() {
             {/* Footer Actions */}
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between pt-4">
               <div className="flex items-center gap-2 text-sm">
-                <span>C:\ADMIN_WORLD{">"} ACCEPT [Y/N]_</span>
+                <span>C:\ADMIN_WORLD{" > "} ACCEPT [Y/N]_</span>
                 <span className="w-2 h-4 bg-[#00ff00] animate-[bounce_1s_infinite]" />
               </div>
               <div className="flex gap-4 w-full md:w-auto">
