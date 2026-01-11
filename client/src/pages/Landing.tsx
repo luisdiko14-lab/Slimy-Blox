@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
@@ -62,8 +62,13 @@ export default function Landing() {
           </Button>
         </div>
 
-        <div className="mt-16 text-[10px] text-primary/30 uppercase tracking-[0.2em]">
-          Connection secure // Protocol 7.4.1 // Replit.com/servers
+        <div className="mt-16 text-[10px] text-primary/30 uppercase tracking-[0.2em] flex flex-col items-center gap-2">
+          <Link href="/license">
+            <span className="cursor-pointer hover:text-primary/60 transition-colors underline decoration-primary/20">
+              SOFTWARE LICENSE AGREEMENT [ADMIN_OS_v1.0]
+            </span>
+          </Link>
+          <div>Connection secure // Protocol 7.4.1 // Replit.com/servers</div>
         </div>
       </motion.div>
 
