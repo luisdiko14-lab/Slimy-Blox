@@ -39,7 +39,7 @@ export async function registerRoutes(
             }
           });
         } else if (message.type === "KICK_ALL") {
-          // Broadcast kick to everyone
+          // Broadcast kick to everyone including sender
           const kickMsg = JSON.stringify({ type: "KICK_ALL" });
           wss.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
