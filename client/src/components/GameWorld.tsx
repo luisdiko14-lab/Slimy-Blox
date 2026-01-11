@@ -160,8 +160,11 @@ export function GameWorld() {
           return next;
         });
       } else if (msg.type === "KICK_ALL") {
+        console.log("Player was kicked, showing connection lost screen");
         setIsKicked(true);
-        if (socketRef.current) socketRef.current.close();
+        if (socketRef.current) {
+          socketRef.current.close();
+        }
       }
     };
 
