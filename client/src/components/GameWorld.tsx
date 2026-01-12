@@ -17,6 +17,15 @@ interface Position {
   y: number;
 }
 
+interface Boss {
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  pos: Position;
+  color: string;
+}
+
 interface Entity {
   id: string;
   type: "player" | "npc";
@@ -25,6 +34,9 @@ interface Entity {
   name: string;
   rank?: Rank;
   effects?: string[]; // 'god', 'fly'
+  hp?: number;
+  maxHp?: number;
+  weapon?: string;
 }
 
 const RANKS: Record<Rank, number> = {
@@ -177,10 +189,20 @@ export function GameWorld() {
         console.log(`Player was kicked/killed, reason: ${reason}, redirecting...`);
         window.location.href = reason === 'kill' ? "/killed.html" : "/kicked.html";
       } else if (msg.type === "UPDATE_RANK") {
-        if (msg.payload.rank && RANKS[msg.payload.rank] !== undefined) {
+        if (msg.payload.rank && RANKS[msg.payload.rank as Rank] !== undefined) {
           updateRank(msg.payload.rank);
           addToChat(`SYSTEM: Your rank has been updated to ${msg.payload.rank}`, "info");
         }
+      } else if (msg.type === "BOSS_SPAWN") {
+        setActiveBoss(msg.payload);
+        addToChat(`WORLD BOSS SPAWNED: ${msg.payload.name}!`, "info");
+      } else if (msg.type === "BOSS_HP") {
+        setActiveBoss(prev => prev ? { ...prev, hp: msg.payload.hp } : null);
+      } else if (msg.type === "PLAYER_DAMAGE") {
+        setPlayer(prev => ({ 
+          ...prev, 
+          hp: Math.max(0, (prev.hp || 100) - msg.payload.damage) 
+        }));
       }
     };
 
@@ -214,6 +236,8 @@ export function GameWorld() {
   const [gameSpeed, setGameSpeed] = useState(MOVEMENT_SPEED_BASE);
   const [announcement, setAnnouncement] = useState<string | null>(null);
   const [isKicked, setIsKicked] = useState(false);
+  const [activeBoss, setActiveBoss] = useState<Boss | null>(null);
+  const [weapon, setWeapon] = useState<string | null>(null);
 
   const { mutate: logCommand } = useCreateLog();
 
@@ -507,6 +531,40 @@ export function GameWorld() {
         }
         break;
 
+      case "boss-spawn":
+        if (!checkPermission("Owner")) return addToChat("Permission Denied.", "error");
+        const bossType = args[0]?.toLowerCase();
+        let bossData = null;
+        if (bossType === "slimy") {
+          bossData = { id: "slimy", name: "Slimy", hp: 12000, maxHp: 12000, pos: { x: 1000, y: 1000 }, color: "#32CD32" };
+        } else if (bossType === "danny") {
+          bossData = { id: "danny", name: "Danny", hp: 1250, maxHp: 1250, pos: { x: 1000, y: 1000 }, color: "#4169E1" };
+        } else {
+          return addToChat("Usage: /boss-spawn Slimy or /boss-spawn Danny", "error");
+        }
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({ type: 'BOSS_SPAWN', payload: bossData }));
+        }
+        setWeapon("Cool Sword");
+        addToChat("Gave you a Cool Sword (50 DMG) to fight the boss!", "info");
+        break;
+
+      case "attack":
+        const targetName = args[0];
+        if (!targetName) return addToChat("Usage: /attack <player/boss>", "error");
+        if (weapon !== "Cool Sword") return addToChat("You need a weapon to attack!", "error");
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({ type: 'ATTACK', payload: { target: targetName, damage: 50 } }));
+        }
+        break;
+
+      case "revive":
+        const reviveTarget = args[0] || player.name;
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({ type: 'REVIVE', payload: { target: reviveTarget } }));
+        }
+        break;
+
       case "unrank":
         if (!checkPermission("Owner")) return addToChat("Permission Denied.", "error");
         const unrankTarget = args[0];
@@ -592,6 +650,30 @@ export function GameWorld() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* --- Boss Health Bar --- */}
+      {activeBoss && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md bg-black/80 border-2 border-red-500 p-2 font-pixel">
+          <div className="flex justify-between text-[10px] text-red-500 mb-1">
+            <span>BOSS: {activeBoss.name.toUpperCase()}</span>
+            <span>{activeBoss.hp}/{activeBoss.maxHp} HP</span>
+          </div>
+          <div className="w-full h-3 bg-red-900/30 overflow-hidden">
+            <motion.div 
+              className="h-full bg-red-500 shadow-[0_0_10px_rgba(255,0,0,0.5)]"
+              animate={{ width: `${(activeBoss.hp / activeBoss.maxHp) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* --- Player HUD --- */}
+      <div className="absolute bottom-4 left-4 z-50 space-y-2 font-pixel text-xs">
+        <div className="bg-black/80 border-2 border-[#0f0] p-2">
+          <div className="text-[#0f0]">HP: {player.hp || 100}/100</div>
+          {weapon && <div className="text-cyan-400 mt-1">WEAPON: {weapon}</div>}
+        </div>
+      </div>
 
       {/* --- Scanlines Overlay --- */}
       <div className="absolute inset-0 z-50 pointer-events-none scanline opacity-20"></div>

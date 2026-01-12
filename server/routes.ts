@@ -91,6 +91,29 @@ export async function registerRoutes(
               }
             });
           }
+        } else if (message.type === "BOSS_SPAWN") {
+          const bossData = message.payload;
+          wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: "BOSS_SPAWN", payload: bossData }));
+            }
+          });
+        } else if (message.type === "ATTACK") {
+          const { target, damage } = message.payload;
+          wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: "BOSS_HP_REDUCE", payload: { damage } }));
+              // For player pvp simulation
+              client.send(JSON.stringify({ type: "PLAYER_DAMAGE", payload: { target, damage } }));
+            }
+          });
+        } else if (message.type === "REVIVE") {
+          const { target } = message.payload;
+          wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: "PLAYER_STATE", payload: { name: target, hp: 100 } }));
+            }
+          });
         }
       } catch (e) {}
     });
