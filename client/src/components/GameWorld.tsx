@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
@@ -198,6 +199,8 @@ export function GameWorld() {
         addToChat(`WORLD BOSS SPAWNED: ${msg.payload.name}!`, "info");
       } else if (msg.type === "BOSS_HP") {
         setActiveBoss(prev => prev ? { ...prev, hp: msg.payload.hp } : null);
+      } else if (msg.type === "BOSS_HP_REDUCE") {
+        setActiveBoss(prev => prev ? { ...prev, hp: Math.max(0, prev.hp - msg.payload.damage) } : null);
       } else if (msg.type === "PLAYER_DAMAGE") {
         setPlayer(prev => ({ 
           ...prev, 
@@ -542,10 +545,21 @@ export function GameWorld() {
         } else {
           return addToChat("Usage: /boss-spawn Slimy or /boss-spawn Danny", "error");
         }
+        
+        // Spawn as NPC as requested
+        setNpcs(prev => [...prev, {
+          id: `boss-${bossData.id}-${Date.now()}`,
+          type: "npc",
+          pos: bossData.pos,
+          color: bossData.color,
+          name: bossData.name
+        }]);
+
         if (socketRef.current?.readyState === WebSocket.OPEN) {
           socketRef.current.send(JSON.stringify({ type: 'BOSS_SPAWN', payload: bossData }));
         }
         setWeapon("Cool Sword");
+        addToChat(`WORLD BOSS SPAWNED: ${bossData.name}!`, "info");
         addToChat("Gave you a Cool Sword (50 DMG) to fight the boss!", "info");
         break;
 
@@ -560,9 +574,11 @@ export function GameWorld() {
 
       case "revive":
         const reviveTarget = args[0] || player.name;
+        setPlayer(prev => ({ ...prev, hp: 100 })); // Locally revive as well
         if (socketRef.current?.readyState === WebSocket.OPEN) {
           socketRef.current.send(JSON.stringify({ type: 'REVIVE', payload: { target: reviveTarget } }));
         }
+        addToChat(`Revived ${reviveTarget}.`, "info");
         break;
 
       case "unrank":
@@ -680,24 +696,32 @@ export function GameWorld() {
 
       {/* --- Kick Popup --- */}
       <AnimatePresence>
-        {isKicked && (
+        {(isKicked || (player.hp !== undefined && player.hp <= 0)) && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="absolute inset-0 z-[110] bg-black/90 flex flex-col items-center justify-center font-pixel p-6"
           >
             <div className="retro-container border-2 border-red-500 p-8 max-w-md w-full text-center">
-              <h2 className="text-red-500 text-2xl mb-6 animate-pulse">CONNECTION LOST</h2>
+              <h2 className="text-red-500 text-2xl mb-6 animate-pulse">
+                {isKicked ? "CONNECTION LOST" : "YOU DIED"}
+              </h2>
               <p className="text-white/70 mb-8 uppercase text-sm leading-relaxed">
-                You have lost connection to the server.
+                {isKicked ? "You have lost connection to the server." : "The simulation has terminated your consciousness."}
               </p>
               
               <div className="flex flex-col gap-4">
                 <Button 
-                  onClick={() => window.location.reload()}
+                  onClick={() => {
+                    if (isKicked) {
+                      window.location.reload();
+                    } else {
+                      executeCommand("revive", [player.name]);
+                    }
+                  }}
                   className="w-full h-12 bg-red-500 text-white hover:bg-red-600 rounded-none border-none"
                 >
-                  REJOIN
+                  {isKicked ? "REJOIN" : "RESPAWN"}
                 </Button>
                 <Button 
                   onClick={() => window.location.href = "/"}
@@ -734,25 +758,27 @@ export function GameWorld() {
           />
         </div>
 
-        {/* NPCs */}
-        {npcs.map((npc) => (
-          <div
-            key={npc.id}
-            className="absolute flex flex-col items-center justify-center transition-all duration-300"
-            style={{
-              left: npc.pos.x,
-              top: npc.pos.y,
-              width: PLAYER_SIZE,
-              height: PLAYER_SIZE,
-            }}
-          >
-            <div className="text-[10px] text-white/50 whitespace-nowrap mb-1 font-pixel">{npc.name}</div>
-            <div 
-              className="w-full h-full bg-white/20 border-2 border-white/40 rounded-sm"
-              style={{ backgroundColor: npc.color }}
-            />
+      {/* NPCs */}
+      {npcs.map((npc) => (
+        <div
+          key={npc.id}
+          className="absolute flex flex-col items-center justify-center transition-all duration-300"
+          style={{
+            left: npc.pos.x,
+            top: npc.pos.y,
+            width: npc.name === "Slimy" || npc.name === "Danny" ? 200 : PLAYER_SIZE,
+            height: npc.name === "Slimy" || npc.name === "Danny" ? 200 : PLAYER_SIZE,
+          }}
+        >
+          <div className="text-[10px] text-white/50 whitespace-nowrap mb-1 font-pixel">
+            {npc.name} {npc.name === "Slimy" || npc.name === "Danny" ? "(BOSS)" : ""}
           </div>
-        ))}
+          <div 
+            className="w-full h-full bg-white/20 border-2 border-white/40 rounded-sm"
+            style={{ backgroundColor: npc.color }}
+          />
+        </div>
+      ))}
 
         {/* Other Players */}
         {Array.from(otherPlayers.values()).map((other) => (
@@ -762,8 +788,8 @@ export function GameWorld() {
             style={{
               left: other.pos.x,
               top: other.pos.y,
-              width: other.size || PLAYER_SIZE,
-              height: other.size || PLAYER_SIZE,
+              width: (other as any).size || PLAYER_SIZE,
+              height: (other as any).size || PLAYER_SIZE,
               filter: other.effects?.includes("god") ? "drop-shadow(0 0 15px gold)" : "none",
             }}
           >
@@ -775,6 +801,11 @@ export function GameWorld() {
                   [{other.rank}]
                 </span>
                 <span className="text-white text-xs font-bold text-shadow">{other.name}</span>
+                {(other as any).hp !== undefined && (
+                  <div className="w-12 h-1 bg-red-900/50 mt-1">
+                    <div className="h-full bg-red-500" style={{ width: `${(other as any).hp}%` }} />
+                  </div>
+                )}
               </div>
               <div 
                 className={`w-full h-full border-2 ${

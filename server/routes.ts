@@ -114,6 +114,13 @@ export async function registerRoutes(
               client.send(JSON.stringify({ type: "PLAYER_STATE", payload: { name: target, hp: 100 } }));
             }
           });
+        } else if (message.type === "BOSS_HP_REDUCE") {
+          const { damage } = message.payload;
+          wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: "BOSS_HP_REDUCE", payload: { damage } }));
+            }
+          });
         }
       } catch (e) {}
     });
