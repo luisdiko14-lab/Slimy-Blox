@@ -70,8 +70,28 @@ export async function registerRoutes(
               }
             });
           }
+        } else if (message.type === "UPDATE_RANK") {
+          const target = message.payload.target;
+          const newRank = message.payload.rank;
+          const rankMsg = JSON.stringify({ type: "UPDATE_RANK", payload: { rank: newRank } });
+
+          if (target === "@everyone") {
+            wss.clients.forEach((client) => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(rankMsg);
+              }
+            });
+          } else {
+            const targetLower = target.toLowerCase();
+            clients.forEach((c) => {
+              if (c.state.name.toLowerCase() === targetLower) {
+                if (c.ws.readyState === WebSocket.OPEN) {
+                  c.ws.send(rankMsg);
+                }
+              }
+            });
+          }
         }
-      } catch (e) {}
     });
 
     ws.on("close", () => {

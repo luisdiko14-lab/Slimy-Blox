@@ -176,6 +176,11 @@ export function GameWorld() {
         const reason = msg.payload?.reason || 'kick';
         console.log(`Player was kicked/killed, reason: ${reason}, redirecting...`);
         window.location.href = reason === 'kill' ? "/killed.html" : "/kicked.html";
+      } else if (msg.type === "UPDATE_RANK") {
+        if (msg.payload.rank && RANKS[msg.payload.rank] !== undefined) {
+          updateRank(msg.payload.rank);
+          addToChat(`SYSTEM: Your rank has been updated to ${msg.payload.rank}`, "info");
+        }
       }
     };
 
@@ -485,13 +490,34 @@ export function GameWorld() {
 
       case "rank":
         if (!checkPermission("Owner")) return addToChat("Permission Denied.", "error");
-        // For simplicity, just rank self if no user spec, or rank self anyway since no other real players
-        const newRank = args[1] as Rank; // simplified parsing
-        if (RANKS[newRank] !== undefined) {
-           updateRank(newRank);
-           addToChat(`Rank updated to ${newRank}`, "info");
-        } else {
-            addToChat(`Invalid rank. Ranks: ${Object.keys(RANKS).join(", ")}`, "error");
+        const rankName = args[0] as Rank;
+        const rankTarget = args[1];
+        if (!rankName || !rankTarget) return addToChat("Usage: /rank <rank_name> <player_name> or /rank <rank_name> @everyone", "error");
+
+        if (RANKS[rankName] === undefined) {
+          return addToChat(`Invalid rank. Ranks: ${Object.keys(RANKS).join(", ")}`, "error");
+        }
+
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({
+            type: 'UPDATE_RANK',
+            payload: { target: rankTarget, rank: rankName }
+          }));
+          addToChat(`Sent rank update request for: ${rankTarget} to ${rankName}`, "info");
+        }
+        break;
+
+      case "unrank":
+        if (!checkPermission("Owner")) return addToChat("Permission Denied.", "error");
+        const unrankTarget = args[0];
+        if (!unrankTarget) return addToChat("Usage: /unrank <player_name> or /unrank @everyone", "error");
+
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({
+            type: 'UPDATE_RANK',
+            payload: { target: unrankTarget, rank: "Guest" }
+          }));
+          addToChat(`Sent unrank request for: ${unrankTarget}`, "info");
         }
         break;
 
