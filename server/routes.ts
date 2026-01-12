@@ -92,6 +92,7 @@ export async function registerRoutes(
             });
           }
         }
+      } catch (e) {}
     });
 
     ws.on("close", () => {
